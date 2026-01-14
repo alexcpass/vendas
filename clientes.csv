@@ -1,0 +1,51 @@
+ClienteID,NomeCliente,TipoCliente,Documento,Email,Telefone,RegiaoID
+1,"João Gabriel Guerra","Pessoa Jurídica",94.061.283/0001-25,isadora85@example.net,"0900 005 0475",10
+2,"Luana Araújo","Pessoa Física",361.428.509-05,ana-laura02@example.com,"51 5344 1883",1
+3,"Gustavo Henrique Rocha","Pessoa Física",14.635.809/0001-02,krodrigues@example.net,"(051) 0837 5941",2
+4,"Maysa Machado","Pessoa Física",698.257.304-47,jmendonca@example.org,"+55 84 2329-6362",7
+5,"Sr. Yuri Oliveira","Pessoa Jurídica",09.742.315/0001-89,igor25@example.org,"61 6447-3812",6
+6,"João Pedro Aparecida","Pessoa Física",95.371.406/0001-97,cassianojoao-pedro@example.net,"(021) 3174-5220",6
+7,"Pedro Miguel Nunes","Pessoa Física",05.617.349/0001-90,samuel34@example.org,"+55 (071) 6797 3009",2
+8,"Srta. Anna Liz Albuquerque","Pessoa Física",781.345.926-19,nathanfonseca@example.com,"(084) 0623-2229",3
+9,"Davi Nascimento","Pessoa Jurídica",25.837.460/0001-08,barbosahelena@example.org,"(051) 4461-0095",5
+10,"Mariah Aragão","Pessoa Física",20.948.136/0001-35,luiz-felipe51@example.com,"41 6878-6778",1
+11,"Rebeca Farias","Pessoa Física",501.746.283-07,aurorada-mota@example.net,"(084) 2081 0927",6
+12,"Luiz Henrique Sousa","Pessoa Jurídica",79.210.346/0001-74,pietracassiano@example.net,"11 4527-0223",2
+13,"Arthur Freitas","Pessoa Física",04.953.718/0001-53,caio09@example.net,"+55 21 3162 1126",4
+14,"João Pedro Jesus","Pessoa Jurídica",24.538.960/0001-78,martinsfelipe@example.net,"+55 (051) 8389-0570",8
+15,"Maria Júlia Câmara","Pessoa Física",72.453.186/0001-45,maria-isissantos@example.net,"+55 61 6792 9325",3
+16,"Vitor Hugo Sá","Pessoa Física",58.291.630/0001-42,joao-vitor29@example.net,"0500 566 0819",10
+17,"Sr. Levi Ribeiro","Pessoa Jurídica",74.260.139/0001-00,qda-mata@example.org,"+55 21 0273-1073",6
+18,"Luiz Gustavo Novais","Pessoa Física",809.714.235-04,qgomes@example.org,"+55 21 4517-7322",9
+19,"Anthony Gabriel Aparecida","Pessoa Jurídica",420.516.793-80,caua65@example.com,"31 5208-2049",1
+20,"Luiza Abreu","Pessoa Física",681.432.957-37,azevedoolivia@example.net,"+55 71 2955-8789",3
+21,"Juan Viana","Pessoa Jurídica",217.960.483-13,vianamarcos-vinicius@example.com,"84 5961-4539",7
+22,"Esther Costela","Pessoa Jurídica",49.681.570/0001-83,benicio25@example.com,"(061) 5330-8415",9
+23,"Ana Carolina Nunes","Pessoa Jurídica",416.390.875-75,ana-sophia11@example.net,"(081) 5926 4687",2
+24,"Léo Monteiro","Pessoa Jurídica",21.348.065/0001-00,mendesjuan@example.net,"+55 71 4873-3793",2
+25,"Melissa Viana","Pessoa Jurídica",36.184.759/0001-19,sara11@example.net,"(084) 3364-5594",3
+26,"Maria Sophia Novaes","Pessoa Jurídica",589.043.176-57,henryalbuquerque@example.com,"(081) 2813-9176",5
+27,"Daniela Camargo","Pessoa Física",453.812.607-17,jdias@example.net,"(051) 4475 8628",5
+28,"Sra. Manuella Cavalcante","Pessoa Física",178.390.245-05,ana77@example.net,"+55 (021) 6339 3013",6
+29,"Dra. Carolina Brito","Pessoa Física",735.120.986-30,da-motamaria-alice@example.com,"+55 (041) 9650-7537",10
+30,"Ísis Costa","Pessoa Jurídica",03.581.926/0001-06,dom33@example.com,"+55 61 7422 0189",1
+31,"Manuela Mendonça","Pessoa Física",39.421.860/0001-34,freitasisaac@example.com,"+55 11 5730-2950",5
+32,"João Miguel Aparecida","Pessoa Física",124.597.360-61,yasminmendes@example.org,"21 3532 6159",4
+33,"Pedro Lucas Aparecida","Pessoa Física",254.809.671-85,vargasrael@example.net,"+55 (071) 9002 7316",8
+34,"Lucas Gabriel Rios","Pessoa Física",036.785.294-29,ecarvalho@example.org,"(011) 7847-4744",3
+35,"Dra. Ana Luiza Martins","Pessoa Jurídica",103.295.467-16,ocunha@example.com,"+55 61 0198 8543",5
+36,"Diogo Campos","Pessoa Jurídica",693.074.215-52,qmendes@example.org,"(071) 3490 0873",9
+37,"Laís Souza","Pessoa Física",89.047.615/0001-87,hsa@example.net,"+55 61 0039 5832",7
+38,"Mateus Nogueira","Pessoa Jurídica",82.305.479/0001-39,bellafonseca@example.net,"+55 (071) 3208-5165",9
+39,"Arthur Gabriel Castro","Pessoa Jurídica",271.094.685-85,albuquerqueerick@example.com,"81 6603 9992",4
+40,"Dra. Ester Rodrigues","Pessoa Física",239.150.487-04,ulima@example.org,"(011) 7135 1097",6
+41,"Benjamin Pastor","Pessoa Física",503.894.627-56,ribeirojose@example.net,"71 1598 2616",10
+42,"Luiza Camargo","Pessoa Física",452.981.603-60,jose-pedro65@example.org,"(021) 4004 7744",2
+43,"Maria Alice da Rosa","Pessoa Física",149.802.375-41,riosallana@example.net,"81 8368-7012",2
+44,"Sr. Vinicius Azevedo","Pessoa Física",18.209.763/0001-02,cassianoliz@example.org,"61 0590 2061",2
+45,"Clara Vargas","Pessoa Física",19.273.540/0001-77,cavalcantijoana@example.com,"+55 31 9935-8899",8
+46,"Dr. Rael da Mota","Pessoa Física",684.019.523-60,cmelo@example.net,"(071) 9943-5381",10
+47,"Luana Mendonça","Pessoa Jurídica",619.875.034-57,samaysa@example.net,"+55 (051) 8933 8150",8
+48,"Olívia Mendonça","Pessoa Jurídica",052.849.163-60,brunasilva@example.com,"+55 11 4188-5955",2
+49,"Eduardo Teixeira","Pessoa Física",73.291.840/0001-24,cassianojuan@example.com,"+55 (061) 1917 0710",6
+50,"Henrique Sampaio","Pessoa Jurídica",52.160.487/0001-73,caua94@example.com,"+55 (031) 1537 5965",8

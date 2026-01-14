@@ -1,0 +1,11 @@
+ProdutoID,NomeProduto,Categoria,PreçoUnitário,EstoqueAtual,Fornecedor
+1,Notebook,Tecnologia,"3377,42",16,"Almeida S.A."
+2,Impressora,Tecnologia,"3836,98",72,Ramos
+3,Mouse,Tecnologia,"1504,45",198,"Pires Aparecida - ME"
+4,Teclado,Tecnologia,"961,23",199,"Silveira Sá S.A."
+5,Monitor,Tecnologia,"4514,81",32,"Sales e Filhos"
+6,"Cadeira de Escritório",Escritório,"889,83",18,"Monteiro S.A."
+7,"Mesa de Escritório",Escritório,"54,4",65,Azevedo
+8,Armário,Escritório,"356,66",164,Rios
+9,Caneta,Escritório,"49,54",60,"da Mota Fonseca S/A"
+10,Agenda,Escritório,"1076,87",189,Fonseca
