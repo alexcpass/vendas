@@ -5,5 +5,3 @@ seaborn
 
 
 
-
-Add requirements.txt
