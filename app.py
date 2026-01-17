@@ -1,156 +1,304 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
 
-# Configuração da página
-st.set_page_config(page_title="Dashboard Financeiro", layout="wide")
+st.set_page_config(
+    page_title="Dashboard Comercial",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-@st.cache_data
-def load_data():
-    # Carregar os CSVs
-    vendas = pd.read_csv('vendas.csv')
-    clientes = pd.read_csv('clientes.csv')
-    produtos = pd.read_csv('produtos.csv')
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .main { background-color: #f5f7fa; }
+    .block-container { padding-top: 2rem; }
     
-    # Merge das tabelas
-    vendas_clientes = vendas.merge(clientes, on='ClienteID', how='left')
-    vendas_completo = vendas_clientes.merge(produtos, on='ProdutoID', how='left')
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1a1f36 0%, #0f1419 100%);
+    }
+    section[data-testid="stSidebar"] * { color: white !important; }
     
-    # Converter ValorTotal para float
-    vendas_completo['ValorTotal'] = (
-        vendas_completo['ValorTotal']
-          .astype(str)
-          .str.replace('.', '', regex=False)
-          .str.replace(',', '.', regex=False)
-          .astype(float)
-    )
+    div[data-testid="stMetricValue"] {
+        font-size: 32px;
+        font-weight: 700;
+        color: #2c5282;
+    }
     
-    # Converter DataVenda para datetime e extrair Ano e Mes
-    vendas_completo['DataVenda'] = pd.to_datetime(vendas_completo['DataVenda'], dayfirst=True)
-    vendas_completo['Ano'] = vendas_completo['DataVenda'].dt.year
-    vendas_completo['Mes'] = vendas_completo['DataVenda'].dt.month
+    div[data-testid="stMetricLabel"] {
+        font-size: 13px;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+    }
     
-    return vendas_completo
+    h1 {
+        color: #1a202c;
+        font-weight: 700;
+        font-size: 28px;
+    }
+    
+    .stButton>button {
+        background-color: #4299e1;
+        color: white;
+        border-radius: 6px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 600;
+        border: none;
+    }
+    
+    .stButton>button:hover {
+        background-color: #3182ce;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #e8ecf1;
+        padding: 6px;
+        border-radius: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: transparent;
+        border-radius: 6px;
+        color: #4a5568;
+        font-weight: 600;
+        padding: 8px 20px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: white !important;
+        color: #2d3748 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Carregar dados
-df = load_data()
+def process_data(vendas_file, clientes_file, produtos_file):
+    try:
+        vendas = pd.read_csv(vendas_file)
+        clientes = pd.read_csv(clientes_file)
+        produtos = pd.read_csv(produtos_file)
+        
+        df = vendas.merge(clientes, on='ClienteID', how='left')
+        df = df.merge(produtos, on='ProdutoID', how='left')
+        
+        df['ValorTotal'] = (
+            df['ValorTotal'].astype(str)
+            .str.replace('.', '', regex=False)
+            .str.replace(',', '.', regex=False)
+            .astype(float)
+        )
+        
+        df['DataVenda'] = pd.to_datetime(df['DataVenda'], dayfirst=True)
+        df['Ano'] = df['DataVenda'].dt.year
+        df['Mes'] = df['DataVenda'].dt.month
+        df['MesNome'] = df['Mes'].apply(
+            lambda x: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][x-1]
+        )
+        
+        return df, None
+    except Exception as e:
+        return None, str(e)
 
-# Título principal
-st.title('📊 Dashboard Financeiro - Vendas')
+# SIDEBAR
+with st.sidebar:
+    st.markdown("""
+        <div style='text-align: center; padding: 20px 0 30px 0;'>
+            <div style='font-size: 48px;'>📊</div>
+            <h2 style='margin: 10px 0 0 0; font-size: 20px;'>Performance Comercial</h2>
+            <p style='color: #a0aec0; font-size: 11px; margin-top: 5px;'>Dashboard v2.0</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📤 CARREGAR DADOS")
+    
+    vendas_file = st.file_uploader("Vendas.csv", type=['csv'], key="vendas")
+    clientes_file = st.file_uploader("Clientes.csv", type=['csv'], key="clientes")
+    produtos_file = st.file_uploader("Produtos.csv", type=['csv'], key="produtos")
+    
+    arquivos_ok = all([vendas_file, clientes_file, produtos_file])
+    
+    if arquivos_ok:
+        st.success("✅ Todos os arquivos carregados")
+    else:
+        faltam = 3 - sum([bool(vendas_file), bool(clientes_file), bool(produtos_file)])
+        st.warning(f"⚠️ Faltam {faltam} arquivo(s)")
 
-# Sidebar com filtros
-st.sidebar.header('Filtros')
-anos = sorted(df['Ano'].unique())
-ano_selecionado = st.sidebar.selectbox('Selecione o Ano:', anos)
+if not arquivos_ok:
+    st.markdown("""
+        <div style='text-align: center; padding: 80px 20px;'>
+            <div style='font-size: 64px; margin-bottom: 20px;'>📊</div>
+            <h1 style='font-size: 32px; margin-bottom: 10px;'>Bem-vindo ao Dashboard Comercial</h1>
+            <p style='font-size: 16px; color: #718096;'>Carregue seus arquivos CSV na barra lateral para iniciar a análise</p>
+        </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
-# Filtrar dados
-df_filtrado = df[df['Ano'] == ano_selecionado]
+# PROCESSAR
+with st.spinner('Processando dados...'):
+    df, erro = process_data(vendas_file, clientes_file, produtos_file)
 
-# Métricas principais
+if erro:
+    st.error(f"❌ Erro: {erro}")
+    st.stop()
+
+# FILTROS NA SIDEBAR
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔍 FILTROS")
+    
+    anos = sorted(df['Ano'].unique().tolist())
+    ano_sel = st.selectbox("Ano", anos, index=len(anos)-1)
+    
+    categorias = ['Todas'] + sorted(df['Categoria'].unique().tolist())
+    cat_sel = st.selectbox("Categoria", categorias)
+    
+    formas = ['Todas'] + sorted(df['FormaPagamento'].unique().tolist())
+    forma_sel = st.selectbox("Forma Pagamento", formas)
+    
+    st.markdown("---")
+    st.markdown(f"""
+        <div style='padding: 15px; background: rgba(66, 153, 225, 0.1); border-radius: 8px;'>
+            <p style='font-size: 11px; color: #a0aec0; margin: 0;'>PERÍODO</p>
+            <p style='font-size: 13px; margin: 5px 0 0 0;'>{df['DataVenda'].min().strftime('%d/%m/%Y')} a {df['DataVenda'].max().strftime('%d/%m/%Y')}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# APLICAR FILTROS
+df_filtrado = df[df['Ano'] == ano_sel].copy()
+
+if cat_sel != 'Todas':
+    df_filtrado = df_filtrado[df_filtrado['Categoria'] == cat_sel]
+
+if forma_sel != 'Todas':
+    df_filtrado = df_filtrado[df_filtrado['FormaPagamento'] == forma_sel]
+
+# HEADER
+st.markdown(f"""
+    <div style='margin-bottom: 30px;'>
+        <h1>Performance Comercial - {ano_sel}</h1>
+        <p style='color: #718096; font-size: 14px;'>Atualizado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}</p>
+    </div>
+""", unsafe_allow_html=True)
+
+# KPIS
 col1, col2, col3, col4 = st.columns(4)
 
+faturamento = df_filtrado['ValorTotal'].sum()
+vendas_qtd = df_filtrado['VendaID'].nunique()
+ticket = faturamento / vendas_qtd if vendas_qtd > 0 else 0
+clientes = df_filtrado['ClienteID'].nunique()
+
 with col1:
-    faturamento_total = df_filtrado['ValorTotal'].sum()
-    st.metric("Faturamento Total", f"R$ {faturamento_total:,.2f}")
+    st.markdown("""
+        <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+            <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Total Vendas ($)</p>
+            <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>R$ {faturamento:,.0f}</p>
+        </div>
+    """.format(faturamento=faturamento), unsafe_allow_html=True)
 
 with col2:
-    qtd_vendas = df_filtrado['VendaID'].nunique()
-    st.metric("Total de Vendas", f"{qtd_vendas:,}")
+    st.markdown("""
+        <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+            <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Vendas (Qtd)</p>
+            <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>{vendas_qtd:,}</p>
+        </div>
+    """.format(vendas_qtd=vendas_qtd), unsafe_allow_html=True)
 
 with col3:
-    ticket_medio = faturamento_total / qtd_vendas if qtd_vendas > 0 else 0
-    st.metric("Ticket Médio", f"R$ {ticket_medio:,.2f}")
+    st.markdown("""
+        <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+            <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Ticket Médio</p>
+            <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>R$ {ticket:,.0f}</p>
+        </div>
+    """.format(ticket=ticket), unsafe_allow_html=True)
 
 with col4:
-    qtd_clientes = df_filtrado['ClienteID'].nunique()
-    st.metric("Clientes Únicos", f"{qtd_clientes:,}")
+    st.markdown("""
+        <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+            <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Clientes Únicos</p>
+            <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>{clientes}</p>
+        </div>
+    """.format(clientes=clientes), unsafe_allow_html=True)
 
-st.markdown("---")
+st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
 
-# Gráfico de Faturamento Mensal
-st.subheader(f'📈 Faturamento Mensal - {ano_selecionado}')
+# TABS
+tab1, tab2, tab3 = st.tabs(["📈 Visão Geral", "📦 Produtos", "💳 Pagamentos"])
 
-fat_mensal = (
-    df_filtrado.groupby('Mes')['ValorTotal']
-    .sum()
-    .reset_index()
-    .sort_values('Mes')
-)
-
-fat_mensal['MesNome'] = fat_mensal['Mes'].apply(
-    lambda x: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][x-1]
-)
-
-sns.set_theme(style='whitegrid')
-fig, ax = plt.subplots(figsize=(12, 4))
-sns.barplot(
-    data=fat_mensal,
-    x='MesNome', y='ValorTotal',
-    ax=ax, color='#1f77b4'
-)
-ax.set_xlabel('Mês')
-ax.set_ylabel('Faturamento (R$)')
-ax.set_title(f'Evolução Mensal de Faturamento - {ano_selecionado}')
-plt.xticks(rotation=0)
-st.pyplot(fig)
-
-st.markdown("---")
-
-# Duas colunas para análises
-col_left, col_right = st.columns(2)
-
-with col_left:
-    st.subheader('🏆 Top 10 Produtos - Faturamento')
-    fat_produto = (
-        df_filtrado.groupby('NomeProduto')['ValorTotal']
+with tab1:
+    st.markdown("<div style='background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 20px;'>", unsafe_allow_html=True)
+    
+    st.markdown("### Faturamento Mensal")
+    
+    fat_mensal = (
+        df_filtrado.groupby(['Mes', 'MesNome'])['ValorTotal']
         .sum()
         .reset_index()
-        .sort_values('ValorTotal', ascending=False)
-        .head(10)
+        .sort_values('Mes')
     )
     
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    sns.barplot(
-        data=fat_produto,
-        y='NomeProduto', x='ValorTotal',
-        ax=ax2, palette='Blues_r'
-    )
-    ax2.set_xlabel('Faturamento (R$)')
-    ax2.set_ylabel('Produto')
-    st.pyplot(fig2)
-
-with col_right:
-    st.subheader('💳 Faturamento por Forma de Pagamento')
-    fat_pagamento = (
-        df_filtrado.groupby('FormaPagamento')['ValorTotal']
-        .sum()
-        .reset_index()
-        .sort_values('ValorTotal', ascending=False)
+    fig = px.bar(
+        fat_mensal,
+        x='MesNome',
+        y='ValorTotal',
+        text='ValorTotal',
+        labels={'ValorTotal': 'Faturamento (R$)', 'MesNome': ''}
     )
     
-    fig3, ax3 = plt.subplots(figsize=(6, 4))
-    ax3.pie(
-        fat_pagamento['ValorTotal'],
-        labels=fat_pagamento['FormaPagamento'],
-        autopct='%1.1f%%',
-        startangle=90
+    fig.update_traces(
+        texttemplate='R$ %{text:,.0f}',
+        textposition='outside',
+        marker_color='#4299e1',
+        marker_line_color='#3182ce',
+        marker_line_width=1.5
     )
-    ax3.set_title('Distribuição por Forma de Pagamento')
-    st.pyplot(fig3)
-
-st.markdown("---")
-
-# Tabela de detalhes
-st.subheader('📋 Detalhamento de Vendas')
-df_detalhes = df_filtrado[[
-    'DataVenda', 'NomeCliente', 'NomeProduto', 
-    'Quantidade', 'ValorTotal', 'FormaPagamento'
-]].sort_values('DataVenda', ascending=False).head(50)
-
-st.dataframe(df_detalhes, use_container_width=True)
-
-# Footer
-st.markdown("---")
-st.caption("Dashboard criado com Python + Streamlit | Dados fictícios para demonstração")
+    
+    fig.update_layout(
+        height=400,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(size=12, color='#4a5568'),
+        xaxis=dict(showgrid=False, showline=True, linecolor='#e2e8f0'),
+        yaxis=dict(showgrid=True, gridcolor='#f7fafc', showline=False),
+        margin=dict(t=20, b=20, l=20, r=20),
+        hovermode='x unified'
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # SEGUNDA LINHA
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.markdown("<div style='background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 20px;'>", unsafe_allow_html=True)
+        st.markdown("### Volume de Vendas")
+        
+        qtd_mensal = (
+            df_filtrado.groupby(['Mes', 'MesNome'])['VendaID']
+            .count()
+            .reset_index()
+            .sort_values('Mes')
+        )
+        
+        fig2 = px.line(
+            qtd_mensal,
+            x='MesNome',
+            y='VendaID',
+            markers=True,
+            labels={'VendaID': 'Quantidade', 'MesNome': ''}
+        )
+        
+        fig2.update_traces(
+            line_color='#48bb78',
+            line_width=3,
+            marker=dict(size=10, color='#
