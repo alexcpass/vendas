@@ -1,133 +1,296 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
-
-st.set_page_config(page_title="Dashboard Comercial", page_icon="📊", layout="wide")
-
-st.markdown("""
-<style>
-.main { background-color: #f5f7fa; }
-section[data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1f36, #0f1419); }
-section[data-testid="stSidebar"] * { color: white !important; }
-div[data-testid="stMetricValue"] { font-size: 28px; font-weight: 700; color: #2c5282; }
-h1 { color: #1a202c; }
-.stButton>button[kind="primary"] { background-color: #4299e1; color: white; }
-</style>
-""", unsafe_allow_html=True)
-
-def process(v,c,p):
-    vendas = pd.read_csv(v)
-    clientes = pd.read_csv(c)
-    produtos = pd.read_csv(p)
-    df = vendas.merge(clientes, on='ClienteID').merge(produtos, on='ProdutoID')
-    df['ValorTotal'] = df['ValorTotal'].astype(str).str.replace('.','').str.replace(',','.').astype(float)
-    df['DataVenda'] = pd.to_datetime(df['DataVenda'], dayfirst=True)
-    df['Ano'], df['Mes'] = df['DataVenda'].dt.year, df['DataVenda'].dt.month
-    df['MesNome'] = df['Mes'].apply(lambda x: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][x-1])
-    return df
-
-with st.sidebar:
-    st.markdown("<div style='text-align:center;padding:20px 0;'><div style='font-size:48px;'>📊</div><h2>Performance</h2></div>", unsafe_allow_html=True)
-    st.markdown("---")
-    v = st.file_uploader("Vendas.csv", type=['csv'])
-    c = st.file_uploader("Clientes.csv", type=['csv'])
-    p = st.file_uploader("Produtos.csv", type=['csv'])
-
-if not all([v,c,p]):
-    st.markdown("<div style='text-align:center;padding:80px;'><h1>Carregue os arquivos CSV</h1></div>", unsafe_allow_html=True)
-    st.stop()
-
-df = process(v,c,p)
-
-st.markdown(f"<h1>Performance Comercial</h1>", unsafe_allow_html=True)
-
-# BOTÕES DE ANO
-anos = sorted(df['Ano'].unique())
-if 'ano' not in st.session_state: st.session_state.ano = anos[-1]
-
-cols = st.columns([1]+[1]*len(anos))
-with cols[0]:
-    if st.button("Todos", type="primary" if st.session_state.ano=="Todos" else "secondary"):
-        st.session_state.ano = "Todos"
-        st.rerun()
-for i,a in enumerate(anos):
-    with cols[i+1]:
-        if st.button(str(a), type="primary" if st.session_state.ano==a else "secondary", key=f"a{a}"):
-            st.session_state.ano = a
-            st.rerun()
-
-st.markdown("---")
-
-# FILTROS SIDEBAR
-with st.sidebar:
-    st.markdown("---")
-    cat = st.selectbox("Categoria", ['Todas']+sorted(df['Categoria'].unique().tolist()))
-    frm = st.selectbox("Pagamento", ['Todas']+sorted(df['FormaPagamento'].unique().tolist()))
-
-df_f = df if st.session_state.ano=="Todos" else df[df['Ano']==st.session_state.ano].copy()
-if cat!='Todas': df_f = df_f[df_f['Categoria']==cat]
-if frm!='Todas': df_f = df_f[df_f['FormaPagamento']==frm]
-
-# KPIS
-c1,c2,c3,c4 = st.columns(4)
-fat,qtd = df_f['ValorTotal'].sum(), df_f['VendaID'].nunique()
-tkt = fat/qtd if qtd>0 else 0
-
-c1.metric("💰 Faturamento", f"R$ {fat:,.0f}")
-c2.metric("🛒 Vendas", f"{qtd}")
-c3.metric("🎯 Ticket Médio", f"R$ {tkt:,.0f}")
-c4.metric("👥 Clientes", f"{df_f['ClienteID'].nunique()}")
-
-st.markdown("---")
-
-# GRÁFICO MENSAL
-st.markdown("### 📈 Faturamento Mensal")
-fm = df_f.groupby(['Mes','MesNome'])['ValorTotal'].sum().reset_index().sort_values('Mes')
-fig = px.bar(fm, x='MesNome', y='ValorTotal', text='ValorTotal')
-fig.update_traces(texttemplate='R$ %{text:,.0f}', textposition='outside', marker_color='#4299e1')
-fig.update_layout(height=400, plot_bgcolor='white')
-st.plotly_chart(fig, use_container_width=True)
-
-# SEGUNDA LINHA
-ca,cb = st.columns(2)
-
-with ca:
-    st.markdown("### 📊 Volume de Vendas")
-    qm = df_f.groupby(['Mes','MesNome'])['VendaID'].count().reset_index().sort_values('Mes')
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(
-        x=qm['MesNome'], y=qm['VendaID'],
-        mode='lines+markers+text',
-        line=dict(color='#48bb78', width=4),
-        marker=dict(size=14, color='#48bb78', line=dict(color='white', width=2)),
-        text=qm['VendaID'],
-        textposition='top center',
-        textfont=dict(size=13, color='#1a365d', weight='bold')
-    ))
-    fig2.update_layout(
-        height=400,
-        plot_bgcolor='#fafafa',
-        paper_bgcolor='white',
-        xaxis=dict(showgrid=False, title='Mês'),
-        yaxis=dict(showgrid=True, gridcolor='#e2e8f0', title='Qtd'),
-        margin=dict(t=20,b=20,l=20,r=20)
-    )
-    st.plotly_chart(fig2, use_container_width=True)
-
-with cb:
-    st.markdown("### 📦 Top 10 Produtos")
-    tp = df_f.groupby('NomeProduto')['ValorTotal'].sum().reset_index().sort_values('ValorTotal', ascending=False).head(10)
-    fig3 = px.bar(tp, y='NomeProduto', x='ValorTotal', orientation='h', text='ValorTotal', color='ValorTotal', color_continuous_scale='Blues')
-    fig3.update_traces(texttemplate='R$ %{text:,.0f}', textposition='outside')
-    fig3.update_layout(height=400, showlegend=False)
-    st.plotly_chart(fig3, use_container_width=True)
-
-# TABELA
-st.markdown("---\n### 📋 Últimas 50 Vendas")
-det = df_f[['DataVenda','NomeCliente','NomeProduto','Quantidade','ValorTotal','FormaPagamento']].sort_values('DataVenda', ascending=False).head(50)
-det['DataVenda'] = det['DataVenda'].dt.strftime('%d/%m/%Y')
-st.dataframe(det, use_container_width=True, height=400)
-
-st.caption("Dashboard Python + Streamlit")
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Python - LinkedIn Cover</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+        
+        .cover {
+            width: 1200px;
+            height: 628px;
+            background: linear-gradient(135deg, #0a1929 0%, #1a2332 50%, #0a1929 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        /* Elementos decorativos */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+        }
+        
+        .circle1 {
+            width: 300px;
+            height: 300px;
+            background: #1f77b4;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .circle2 {
+            width: 200px;
+            height: 200px;
+            background: #2ca02c;
+            bottom: -50px;
+            left: 100px;
+        }
+        
+        .circle3 {
+            width: 150px;
+            height: 150px;
+            background: #ff7f0e;
+            top: 200px;
+            right: 200px;
+        }
+        
+        /* Grid de fundo */
+        .grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        /* Conteúdo principal */
+        .content {
+            position: relative;
+            z-index: 2;
+            padding: 60px 80px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #1f77b4, #2ca02c);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .badge {
+            background: rgba(31, 119, 180, 0.2);
+            color: #64b5f6;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(100, 181, 246, 0.3);
+        }
+        
+        .main-text {
+            flex: 1;
+        }
+        
+        .question {
+            font-size: 52px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .highlight {
+            color: #64b5f6;
+            position: relative;
+        }
+        
+        .subtitle {
+            font-size: 28px;
+            color: #b0bec5;
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+        
+        .solution {
+            background: rgba(31, 119, 180, 0.15);
+            border-left: 4px solid #1f77b4;
+            padding: 20px 30px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .solution-title {
+            font-size: 18px;
+            color: #64b5f6;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tech-stack {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .tech-item {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .author {
+            color: #90a4ae;
+            font-size: 16px;
+        }
+        
+        .author-name {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #64b5f6;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #90a4ae;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Gráfico decorativo */
+        .chart-decoration {
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.15;
+        }
+        
+        .bar {
+            width: 40px;
+            background: #1f77b4;
+            margin: 0 8px;
+            border-radius: 4px 4px 0 0;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+    </style>
+</head>
+<body>
+    <div class="cover">
+        <div class="grid"></div>
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
+        
+        <div class="chart-decoration">
+            <div class="bar" style="height: 180px;"></div>
+            <div class="bar" style="height: 120px;"></div>
+            <div class="bar" style="height: 100px;"></div>
+            <div class="bar" style="height: 200px;"></div>
+            <div class="bar" style="height: 140px;"></div>
+        </div>
+        
+        <div class="content">
+            <div class="header">
+                <div class="icon">📊</div>
+                <div class="badge">PROJETO DE PORTFÓLIO</div>
+            </div>
+            
+            <div class="main-text">
+                <h1 class="question">
+                    E se a empresa não tiver<br>
+                    <span class="highlight">Power BI ou Metabase?</span>
+                </h1>
+                
+                <p class="subtitle">
+                    Criando dashboards interativos só com Python
+                </p>
+                
+                <div class="solution">
+                    <div class="solution-title">✨ Solução Completa em Python</div>
+                    <div class="tech-stack">
+                        <span class="tech-item">Python + Pandas</span>
+                        <span class="tech-item">Streamlit</span>
+                        <span class="tech-item">GitHub</span>
+                        <span class="tech-item">Deploy Gratuito</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <div class="author">
+                    <div class="author-name">Alexandre C. Passos</div>
+                    <div>Analista de Dados | BI | SQL | Python</div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Python</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">R$ 0</div>
+                        <div class="stat-label">Custo</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">24/7</div>
+                        <div class="stat-label">Online</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
