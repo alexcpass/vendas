@@ -1,3 +1,4 @@
+%%writefile app.py
 
 import streamlit as st
 import pandas as pd
@@ -201,36 +202,36 @@ if df is not None:
     clientes = df_filtrado['ClienteID'].nunique()
 
     with col1:
-        st.markdown("""
+        st.markdown(f"""
             <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
                 <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Total Vendas ($)</p>
                 <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>R$ {faturamento:,.0f}</p>
             </div>
-        """.format(faturamento=faturamento), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
+        st.markdown(f"""
             <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
                 <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Vendas (Qtd)</p>
                 <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>{vendas_qtd:,}</p>
             </div>
-        """.format(vendas_qtd=vendas_qtd), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     with col3:
-        st.markdown("""
+        st.markdown(f"""
             <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
                 <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Ticket Médio</p>
                 <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>R$ {ticket:,.0f}</p>
             </div>
-        """.format(ticket=ticket), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     with col4:
-        st.markdown("""
+        st.markdown(f"""
             <div style='background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
                 <p style='font-size: 12px; color: #718096; font-weight: 600; margin: 0; text-transform: uppercase;'>Clientes Únicos</p>
                 <p style='font-size: 28px; color: #2c5282; font-weight: 700; margin: 8px 0 0 0;'>{clientes}</p>
             </div>
-        """.format(clientes=clientes), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin: 30px 0;'></div>", unsafe_allow_html=True)
 
@@ -413,4 +414,3 @@ if df is not None:
     # FOOTER
     st.markdown("---")
     st.caption("Dashboard criado com Python + Streamlit | Dados carregados via upload")
-
