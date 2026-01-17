@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -412,3 +413,4 @@ if df is not None:
     # FOOTER
     st.markdown("---")
     st.caption("Dashboard criado com Python + Streamlit | Dados carregados via upload")
+
