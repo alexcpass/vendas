@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
 # -----------------------------------------------------------------------------
@@ -10,83 +9,29 @@ st.set_page_config(page_title="Dashboard Comercial", page_icon="📊", layout="w
 
 st.markdown("""
 <style>
-    /* IMPORTS & GERAL */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    /* Fundo Geral */
+    .main { background-color: #f5f7fa; }
     
-    .main { background-color: #f5f7fa; font-family: 'Inter', sans-serif; }
-    
-    /* SIDEBAR */
+    /* Sidebar */
     section[data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1f36, #0f1419); }
     section[data-testid="stSidebar"] * { color: white !important; }
-
-    /* --- ESTILO DO BLOCO DE DESTAQUE (GRADIENTE) --- */
-    /* Usamos um truque de CSS (:has) para estilizar o container que tem o ID específico */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) {
-        background: linear-gradient(135deg, #4169E1 0%, #7B68EE 100%); /* Royal Blue -> Medium Slate Blue */
-        border-radius: 16px;
-        padding: 25px !important;
-        margin-bottom: 30px;
-        box-shadow: 0 10px 25px rgba(65, 105, 225, 0.25);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    /* Textos dentro do bloco de destaque */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) h1,
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) h2,
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) h3,
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) p,
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) span,
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) div[data-testid="stMarkdownContainer"] p {
-        color: white !important;
-    }
-
-    /* Métricas dentro do bloco de destaque */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) [data-testid="stMetricLabel"] {
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-size: 14px;
-        font-weight: 500;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) [data-testid="stMetricValue"] {
-        color: white !important;
-        font-size: 32px;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    /* BOTÕES DENTRO DO DESTAQUE */
-    /* Botão Padrão (Inativo) no fundo escuro */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) .stButton > button[kind="secondary"] {
-        background-color: rgba(255, 255, 255, 0.15);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) .stButton > button[kind="secondary"]:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        border-color: white;
-    }
     
-    /* Botão Ativo no fundo escuro */
-    div[data-testid="stVerticalBlockBorderWrapper"]:has(div#highlight_marker) .stButton > button[kind="primary"] {
-        background-color: white;
-        color: #4169E1; /* Texto azul para contraste */
-        border: none;
-        font-weight: 800;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    /* Layout dos Botões (Largura total e altura reduzida) */
+    /* Métricas (KPIs) */
+    div[data-testid="stMetricValue"] { font-size: 28px; font-weight: 700; color: #2c5282; }
+    
+    /* BOTÕES DE ANO */
     .stButton > button {
         width: 100%;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-weight: 600;
+        border-radius: 6px;
     }
-
-    /* Ajustes Gerais */
+    .stButton>button[kind="primary"] { background-color: #4299e1; color: white; border: none; }
+    .stButton>button[kind="secondary"] { background-color: #e2e8f0; color: #1a202c; border: none; }
+    
+    /* Ajuste de espaçamento do título */
     h1 { margin: 0; padding: 0; }
-    .block-container { padding-top: 2rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -154,7 +99,7 @@ df = process_data(v_file, c_file, p_file)
 
 # Cria um container principal para o Cabeçalho + Filtros + KPIs
 with st.container():
-    # MARCADOR INVISÍVEL PARA O CSS ALVO (IMPORTANTE)
+    # MARCADOR INVISÍVEL PARA O CSS ALVO
     st.markdown('<div id="highlight_marker"></div>', unsafe_allow_html=True)
     
     # Cabeçalho da Seção
@@ -181,12 +126,8 @@ with st.container():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- APLICAÇÃO DOS FILTROS (LOGICA) ---
-    # (Filtros laterais continuam existindo mas aplicamos a lógica aqui para calcular os KPIs)
     cat_sel = 'Todas'
     pag_sel = 'Todas'
-    
-    # Verificação rápida se o usuário mexeu na sidebar (para manter consistência)
-    # Se quiser mover os filtros da sidebar para cá, basta descomentar e adaptar.
     
     df_filtered = df.copy()
     if st.session_state.ano != "Todos":
@@ -198,7 +139,6 @@ with st.container():
     ticket_medio = faturamento / qtd_vendas if qtd_vendas > 0 else 0
     clientes_unicos = df_filtered['ClienteID'].nunique()
 
-    # Layout de Colunas dos KPIs
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("💰 Faturamento Total", f"R$ {faturamento:,.0f}")
     k2.metric("📦 Volume de Vendas", f"{qtd_vendas}")
@@ -217,14 +157,10 @@ with st.sidebar:
     pag_opts = ['Todas'] + sorted(df['FormaPagamento'].dropna().unique().tolist())
     pag_sel = st.selectbox("Forma de Pagamento", pag_opts)
 
-# Reaplica filtros secundários
 if cat_sel != 'Todas':
     df_filtered = df_filtered[df_filtered['Categoria'] == cat_sel]
 if pag_sel != 'Todas':
     df_filtered = df_filtered[df_filtered['FormaPagamento'] == pag_sel]
-
-# Recalcula KPIs visuais apenas para os gráficos abaixo (Os KPIs do topo são globais do ano)
-# Se quiser que os KPIs do topo obedeçam aos filtros da sidebar, mova a lógica de cálculo para depois deste bloco.
 
 st.markdown("---")
 
@@ -232,30 +168,17 @@ st.markdown("---")
 # 6. GRÁFICOS
 # -----------------------------------------------------------------------------
 
-# GRÁFICO 1: FATURAMENTO MENSAL
-st.markdown("### 📈 Evolução do Faturamento")
-df_fat_mensal = df_filtered.groupby(['Mes', 'MesNome'])['ValorTotal'].sum().reset_index().sort_values('Mes')
-
-fig_fat = px.bar(
-    df_fat_mensal, 
-    x='MesNome', 
-    y='ValorTotal', 
-    text='ValorTotal',
-    color_discrete_sequence=['#4169E1'] # Royal Blue para combinar
-)
-fig_fat.update_traces(texttemplate='R$ %{text:,.0f}', textposition='outside')
-fig_fat.update_layout(height=350, plot_bgcolor='white', margin=dict(t=30, b=0, l=0, r=0))
-st.plotly_chart(fig_fat, use_container_width=True)
-
-# GRÁFICO 2: VOLUME DE VENDAS
+# GRÁFICO 2: VOLUME DE VENDAS (MISTO: BARRAS LARANJA SUAVE + LINHAS + FUNDO ESCURO PEROLADO)
 st.markdown("### 📊 Sazonalidade de Vendas")
 df_vol_mensal = df_filtered.groupby(['Mes', 'MesNome'])['VendaID'].count().reset_index().sort_values('Mes')
 
 fig_vol = go.Figure()
-# Barras (Fundo suave)
+# Barras (Laranja Suave)
 fig_vol.add_trace(go.Bar(
     x=df_vol_mensal['MesNome'], y=df_vol_mensal['VendaID'],
-    name='Volume', marker_color='#E6E6FA', opacity=0.8 # Lavanda suave
+    name='Volume',
+    marker_color='#F6AD55', # Laranja Suave
+    opacity=0.8
 ))
 # Linha (Destaque)
 fig_vol.add_trace(go.Scatter(
@@ -264,44 +187,31 @@ fig_vol.add_trace(go.Scatter(
     line=dict(color='#7B68EE', width=4), # Medium Slate Blue
     marker=dict(size=10, color='#7B68EE', line=dict(color='white', width=2)),
     text=df_vol_mensal['VendaID'], textposition='top center',
-    textfont=dict(size=14, color='#1a1f36', weight='bold')
+    textfont=dict(size=14, color='black', weight='bold')
 ))
 fig_vol.update_layout(
-    height=400, plot_bgcolor='#f8f9fa', paper_bgcolor='white',
-    xaxis=dict(showgrid=False, tickfont=dict(color='black', weight='bold')),
-    yaxis=dict(showgrid=True, gridcolor='#e0e0e0'),
-    margin=dict(l=20, r=20, t=40, b=20),
-    legend=dict(orientation="h", y=1.1, x=0)
+    height=400,
+    plot_bgcolor='#4A5568',      # Fundo Escuro Perolado
+    paper_bgcolor='#2D3748',      # Fundo do Papel Escuro
+    xaxis=dict(
+        showgrid=False,
+        tickfont=dict(color='white', size=12, weight='bold'), # Meses em Branco
+        linecolor='#A0AEC0'
+    ),
+    yaxis=dict(
+        showgrid=True,
+        gridcolor='#718096', # Grid cinza claro
+        title='Qtd. Vendas',
+        titlefont=dict(color='white'),
+        tickfont=dict(color='white')
+    ),
+    showlegend=True,
+    legend=dict(
+        orientation="h", y=1.1, x=0,
+        font=dict(color='white')
+    ),
+    margin=dict(l=20, r=20, t=40, b=20)
 )
 st.plotly_chart(fig_vol, use_container_width=True)
 
-# GRÁFICO 3: TOP 10 PRODUTOS
-st.markdown("### 🏆 Top 10 Produtos")
-df_top_prod = df_filtered.groupby('NomeProduto')['ValorTotal'].sum().reset_index()
-df_top_prod = df_top_prod.sort_values('ValorTotal', ascending=True).tail(10)
-
-fig_prod = px.bar(
-    df_top_prod, y='NomeProduto', x='ValorTotal', 
-    orientation='h', text='ValorTotal',
-    color='ValorTotal', color_continuous_scale='Blues'
-)
-fig_prod.update_traces(
-    texttemplate='R$ %{text:,.0f}', textposition='outside',
-    textfont=dict(color='#d32f2f', weight='bold')
-)
-fig_prod.update_layout(
-    height=450, plot_bgcolor='white', 
-    xaxis=dict(showgrid=True, gridcolor='#f1f5f9'),
-    coloraxis_showscale=False
-)
-st.plotly_chart(fig_prod, use_container_width=True)
-
-# TABELA
-st.markdown("---")
-st.markdown("### 📋 Registro de Vendas")
-df_table = df_filtered[['DataVenda', 'NomeCliente', 'NomeProduto', 'Quantidade', 'ValorTotal', 'FormaPagamento']].sort_values('DataVenda', ascending=False).head(50)
-df_table['DataVenda'] = df_table['DataVenda'].dt.strftime('%d/%m/%Y')
-df_table['ValorTotal'] = df_table['ValorTotal'].apply(lambda x: f"R$ {x:,.2f}")
-
-st.dataframe(df_table, use_container_width=True, height=400, hide_index=True)
 st.caption("Dashboard Comercial | v.Gradient")
