@@ -142,34 +142,61 @@ fig.update_traces(
 fig.update_layout(height=400, plot_bgcolor='white', margin=dict(t=20))
 st.plotly_chart(fig, use_container_width=True)
 
-# --- GRÁFICO 2: VOLUME DE VENDAS (Legenda PRETA) ---
+# --- GRÁFICO 2: VOLUME DE VENDAS (Misto: Barras + Linhas) ---
 st.markdown("### 📊 Volume de Vendas")
 qm = df_f.groupby(['Mes', 'MesNome'])['VendaID'].count().reset_index().sort_values('Mes')
 
 fig2 = go.Figure()
+
+# 1. Adicionar as BARRAS (Fundo suave)
+fig2.add_trace(go.Bar(
+    x=qm['MesNome'],
+    y=qm['VendaID'],
+    name='Volume (Barras)',
+    marker_color='#b2dfdb',  # Um verde/azulado suave para não brigar com a linha
+    opacity=0.6,             # Transparência para ficar sutil
+    text=qm['VendaID'],
+    textposition='auto',
+    textfont=dict(color='rgba(0,0,0,0)') # Esconde o texto da barra para não duplicar com a linha
+))
+
+# 2. Adicionar a LINHA (Destaque)
 fig2.add_trace(go.Scatter(
     x=qm['MesNome'], 
     y=qm['VendaID'],
     mode='lines+markers+text',
-    name='Qtd. Vendas',
-    line=dict(color='#48bb78', width=4),
-    marker=dict(size=12, color='white', line=dict(color='#48bb78', width=3)),
+    name='Tendência',
+    line=dict(color='#2e7d32', width=4), # Verde mais escuro e forte
+    marker=dict(size=10, color='#2e7d32', line=dict(color='white', width=2)),
     text=qm['VendaID'],
     textposition='top center',
-    # CONFIGURAÇÃO: Texto PRETO
-    textfont=dict(size=14, color='black', weight='bold') 
+    textfont=dict(size=14, color='black', weight='bold') # Texto PRETO bem visível
 ))
 
+# 3. Configuração do Layout (Fundo e Eixos)
 fig2.update_layout(
     height=450,
-    plot_bgcolor='#f7fafc',
+    plot_bgcolor='#FEFDE7',      # <--- COR DE FUNDO: Amarelo Perolado Claro
     paper_bgcolor='white',
-    xaxis=dict(showgrid=False, title=None),
-    yaxis=dict(showgrid=True, gridcolor='#e2e8f0'),
+    xaxis=dict(
+        showgrid=False, 
+        title=None,
+        tickfont=dict(size=14, color='black', weight='bold') # <--- CORRIGE OS MESES (Preto e Negrito)
+    ),
+    yaxis=dict(
+        showgrid=True, 
+        gridcolor='#e0e0e0', # Grid cinza suave
+        title='Qtd Vendas',
+        titlefont=dict(color='black')
+    ),
     showlegend=True,
-    legend=dict(orientation="h", y=1.1, x=0)
+    legend=dict(orientation="h", y=1.1, x=0),
+    margin=dict(l=40, r=40, t=40, b=40)
 )
+
 st.plotly_chart(fig2, use_container_width=True)
+
+
 
 # --- GRÁFICO 3: TOP 10 PRODUTOS (Decrescente + Legenda VERMELHA) ---
 st.markdown("### 📦 Top 10 Produtos por Faturamento")
