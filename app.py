@@ -4,121 +4,115 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURAÇÃO E CSS (ESTILO E-COMMERCE)
+# 1. CONFIGURAÇÃO DA PÁGINA E TEMA SALESFORCE
 # -----------------------------------------------------------------------------
-st.set_page_config(page_title="Store Manager Admin", page_icon="🛍️", layout="wide")
+st.set_page_config(page_title="Financial Analytics CRM", page_icon="☁️", layout="wide")
 
 st.markdown("""
 <style>
-    /* Importando fonte moderna */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    /* Importando fonte estilo corporativo */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8f9fc;
+    /* FUNDO GERAL (Salesforce Light Gray) */
+    .stApp {
+        background-color: #F4F6F9;
+        font-family: 'Roboto', sans-serif;
     }
 
-    /* Remove padding padrão do topo para criar um header fixo visual */
-    .block-container { padding-top: 2rem; }
-
-    /* ESTILO DOS CARDS (KPIs e PRODUTOS) */
-    .ecommerce-card {
-        background-color: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        border: 1px solid #f0f0f0;
-        transition: transform 0.2s;
-        height: 100%;
+    /* SIDEBAR (Branco limpo com borda) */
+    section[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid #D8DDE6;
     }
-    .ecommerce-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-        border-color: #e2e8f0;
+    
+    /* TITULOS */
+    h1, h2, h3 {
+        color: #032D60; /* Salesforce Navy */
+        font-weight: 400;
     }
 
-    /* Títulos dos Cards */
-    .card-title {
-        color: #64748b;
+    /* CARDS (CONTAINERS BRANCOS) */
+    .crm-card {
+        background-color: #FFFFFF;
+        border: 1px solid #DDDBDA;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    /* KPI STYLE */
+    .kpi-label {
+        color: #54698D; /* Slate Gray */
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
+        letter-spacing: 0.0625rem;
+    }
+    .kpi-value {
+        color: #032D60;
+        font-size: 26px;
+        font-weight: 300; /* Estilo Salesforce */
+        margin-top: 4px;
     }
 
-    /* Valores dos Cards */
-    .card-metric {
-        color: #1e293b;
-        font-size: 24px;
-        font-weight: 800;
-    }
-
-    /* Vitrine de Produto (Mini Card) */
-    .product-box {
-        background: white;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 15px;
-        border: 1px solid #eee;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    .product-icon {
-        background: #eff6ff;
-        color: #3b82f6;
-        width: 50px;
-        height: 50px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: bold;
-    }
-
-    /* Botões personalizados */
+    /* BOTÕES (Salesforce Blue) */
     .stButton > button {
-        border-radius: 8px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
+        background-color: #0070D2;
+        color: white;
+        border: 1px solid #0070D2;
+        border-radius: 4px;
+        font-weight: 400;
+        transition: all 0.2s;
     }
-    
-    /* Header Personalizado */
-    .main-header {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    .stButton > button:hover {
+        background-color: #005FB2;
+        border-color: #005FB2;
+    }
+    /* Botão secundário (filtro inativo) */
+    .stButton > button[kind="secondary"] {
+        background-color: white;
+        color: #0070D2;
+        border: 1px solid #DDDBDA;
+    }
+
+    /* HEADER */
+    .header-container {
+        border-bottom: 2px solid #0070D2;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. PROCESSAMENTO (Mesma lógica robusta)
+# 2. PROCESSAMENTO DE DADOS (ETL)
 # -----------------------------------------------------------------------------
 @st.cache_data
-def load_data(v, c, p):
+def load_crm_data(v, c, p):
     try:
         vendas = pd.read_csv(v)
         clientes = pd.read_csv(c)
         produtos = pd.read_csv(p)
         
+        # Merge (Join de tabelas)
         df = vendas.merge(clientes, on='ClienteID', how='left').merge(produtos, on='ProdutoID', how='left')
         
-        # Limpeza de moeda e datas
-        df['ValorTotal'] = df['ValorTotal'].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+        # Limpeza Numérica
+        df['ValorTotal'] = (
+            df['ValorTotal'].astype(str)
+            .str.replace('.', '', regex=False)
+            .str.replace(',', '.', regex=False)
+            .astype(float)
+        )
+        
+        # Datas
         df['DataVenda'] = pd.to_datetime(df['DataVenda'], dayfirst=True)
         df['Ano'] = df['DataVenda'].dt.year
         df['Mes'] = df['DataVenda'].dt.month
         
-        meses_map = {1:'Jan', 2:'Fev', 3:'Mar', 4:'Abr', 5:'Mai', 6:'Jun', 7:'Jul', 8:'Ago', 9:'Set', 10:'Out', 11:'Nov', 12:'Dez'}
+        meses_map = {1:'Jan', 2:'Fev', 3:'Mar', 4:'Abr', 5:'Mai', 6:'Jun',
+                     7:'Jul', 8:'Ago', 9:'Set', 10:'Out', 11:'Nov', 12:'Dez'}
         df['MesNome'] = df['Mes'].map(meses_map)
         
         return df
@@ -126,181 +120,195 @@ def load_data(v, c, p):
         return None
 
 # -----------------------------------------------------------------------------
-# 3. INTERFACE (LAYOUT E-COMMERCE)
+# 3. SIDEBAR (PAINEL DE IMPORTAÇÃO)
 # -----------------------------------------------------------------------------
-
-# --- SIDEBAR (Menu de Navegação) ---
 with st.sidebar:
-    st.markdown("### 🛍️ Painel da Loja")
-    st.caption("Admin Dashboard v2.0")
+    # Logo simulado
+    st.markdown("""
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <div style="font-size: 40px;">☁️</div>
+            <div>
+                <h2 style="margin:0; font-size: 18px; font-weight:700;">Financial Cloud</h2>
+                <p style="margin:0; font-size: 12px; color: #54698D;">Analytics Edition</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # Upload Compacto
-    with st.expander("📂 Carregar Base de Dados", expanded=True):
-        v_file = st.file_uploader("Vendas", type=['csv'])
-        c_file = st.file_uploader("Clientes", type=['csv'])
-        p_file = st.file_uploader("Produtos", type=['csv'])
+    st.markdown("### Data Import Wizard")
+    st.caption("Carregue os arquivos .csv para atualizar os painéis.")
+    
+    v_file = st.file_uploader("Transactions (Vendas)", type=['csv'])
+    c_file = st.file_uploader("Accounts (Clientes)", type=['csv'])
+    p_file = st.file_uploader("Services/Products", type=['csv'])
 
 if not all([v_file, c_file, p_file]):
-    # Tela de "Login/Espera" bonita
-    st.markdown("""
-    <div style="text-align:center; margin-top: 100px;">
-        <h1 style="color:#cbd5e0; font-size: 60px;">🏪</h1>
-        <h3 style="color:#64748b;">Sua loja está fechada...</h3>
-        <p style="color:#94a3b8;">Faça o upload dos arquivos na barra lateral para abrir o painel.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("ℹ️ Aguardando importação de dados para gerar os relatórios.")
     st.stop()
 
-df = load_data(v_file, c_file, p_file)
+df = load_crm_data(v_file, c_file, p_file)
 
-# --- HEADER (Estilo Barra de Topo de Site) ---
-st.markdown(f"""
-<div class="main-header">
-    <div>
-        <h1 style="margin:0; font-size: 24px; color: #1e293b;">Olá, Gestor! 👋</h1>
-        <p style="margin:0; color: #64748b; font-size: 14px;">Aqui está o resumo da performance da sua loja.</p>
+# -----------------------------------------------------------------------------
+# 4. HEADER E FILTROS DE CONTROLE
+# -----------------------------------------------------------------------------
+st.markdown("""
+    <div class="header-container">
+        <h1 style="font-size: 24px; margin-bottom: 5px;">Painel Financeiro Executivo</h1>
+        <p style="color: #54698D; font-size: 14px;">Visão consolidada de receitas e oportunidades fechadas.</p>
     </div>
-    <div style="text-align: right;">
-        <span style="background: #ecfdf5; color: #059669; padding: 5px 12px; border-radius: 20px; font-weight: 600; font-size: 12px;">● Loja Online</span>
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
-# --- FILTROS HORIZONTAIS (Estilo Barra de Busca) ---
+# --- FILTRO DE ANO (BOTOES ESTILO ABAS) ---
 anos = sorted(df['Ano'].unique())
 if 'ano' not in st.session_state: st.session_state.ano = anos[-1]
 
-c_filter, c_cat, c_pay = st.columns([2, 2, 2])
-
-with c_filter:
-    # Simulando abas de ano
-    cols_ano = st.columns(len(anos) + 1)
-    if cols_ano[0].button("Tudo", type="primary" if st.session_state.ano=="Todos" else "secondary"):
+cols_ano = st.columns([1] + [1]*len(anos) + [6])
+with cols_ano[0]:
+    if st.button("Consolidado", type="primary" if st.session_state.ano=="Todos" else "secondary"):
         st.session_state.ano = "Todos"
         st.rerun()
-    for i, a in enumerate(anos):
-        if cols_ano[i+1].button(str(a), type="primary" if st.session_state.ano==a else "secondary", key=f"b_{a}"):
-            st.session_state.ano = a
+
+for i, ano in enumerate(anos):
+    with cols_ano[i+1]:
+        if st.button(str(ano), type="primary" if st.session_state.ano==ano else "secondary", key=f"btn_{ano}"):
+            st.session_state.ano = ano
             st.rerun()
 
-# Aplica filtro de ano
-df_f = df.copy()
-if st.session_state.ano != "Todos": df_f = df_f[df_f['Ano'] == st.session_state.ano]
+# --- FILTROS LATERAIS (Contexto) ---
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### Filtros de Visualização")
+    cat_sel = st.selectbox("Linha de Negócio (Categoria)", ['Todas'] + sorted(df['Categoria'].unique().tolist()))
+    pay_sel = st.selectbox("Condição de Pagamento", ['Todas'] + sorted(df['FormaPagamento'].unique().tolist()))
 
-with c_cat:
-    cat = st.selectbox("Filtrar Departamento", ['Todos'] + sorted(df['Categoria'].unique().tolist()))
-with c_pay:
-    pay = st.selectbox("Método de Pagamento", ['Todos'] + sorted(df['FormaPagamento'].unique().tolist()))
+# Filtragem do Dataset
+df_filtered = df.copy()
+if st.session_state.ano != "Todos": df_filtered = df_filtered[df_filtered['Ano'] == st.session_state.ano]
+if cat_sel != 'Todas': df_filtered = df_filtered[df_filtered['Categoria'] == cat_sel]
+if pay_sel != 'Todas': df_filtered = df_filtered[df_filtered['FormaPagamento'] == pay_sel]
 
-if cat != 'Todos': df_f = df_f[df_f['Categoria'] == cat]
-if pay != 'Todos': df_f = df_f[df_f['FormaPagamento'] == pay]
+# -----------------------------------------------------------------------------
+# 5. CARDS DE MÉTRICAS (VISUAL SALESFORCE)
+# -----------------------------------------------------------------------------
+c1, c2, c3, c4 = st.columns(4)
 
-st.markdown("<br>", unsafe_allow_html=True)
+total_receita = df_filtered['ValorTotal'].sum()
+total_ops = df_filtered['VendaID'].nunique()
+avg_deal = total_receita / total_ops if total_ops > 0 else 0
+contas_ativas = df_filtered['ClienteID'].nunique()
 
-# --- CARDS DE MÉTRICAS (VISUAL CLEAN) ---
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-
-def kpi_card(title, value, icon, color):
-    return f"""
-    <div class="ecommerce-card" style="border-left: 4px solid {color}">
-        <div style="display:flex; justify-content:space-between; align-items:start;">
-            <div>
-                <div class="card-title">{title}</div>
-                <div class="card-metric">{value}</div>
+def crm_metric(col, label, value, icon):
+    with col:
+        st.markdown(f"""
+        <div class="crm-card">
+            <div style="display:flex; justify-content: space-between;">
+                <div>
+                    <div class="kpi-label">{label}</div>
+                    <div class="kpi-value">{value}</div>
+                </div>
+                <div style="font-size: 24px; opacity: 0.7;">{icon}</div>
             </div>
-            <div style="font-size: 24px;">{icon}</div>
         </div>
-    </div>
-    """
+        """, unsafe_allow_html=True)
 
-fat = df_f['ValorTotal'].sum()
-qtd = df_f['VendaID'].nunique()
-tkt = fat/qtd if qtd > 0 else 0
-cli = df_f['ClienteID'].nunique()
+crm_metric(c1, "Receita Total Fechada", f"R$ {total_receita:,.0f}", "💰")
+crm_metric(c2, "Negócios Fechados", f"{total_ops}", "🤝")
+crm_metric(c3, "Ticket Médio (Deal Size)", f"R$ {avg_deal:,.0f}", "📊")
+crm_metric(c4, "Contas Ativas", f"{contas_ativas}", "🏢")
 
-with kpi1: st.markdown(kpi_card("Receita Total", f"R$ {fat:,.0f}", "💰", "#3b82f6"), unsafe_allow_html=True)
-with kpi2: st.markdown(kpi_card("Pedidos", f"{qtd}", "📦", "#10b981"), unsafe_allow_html=True)
-with kpi3: st.markdown(kpi_card("Ticket Médio", f"R$ {tkt:,.0f}", "💳", "#f59e0b"), unsafe_allow_html=True)
-with kpi4: st.markdown(kpi_card("Clientes Ativos", f"{cli}", "👥", "#8b5cf6"), unsafe_allow_html=True)
+# -----------------------------------------------------------------------------
+# 6. GRÁFICOS (VISUAL LIMPO E CORPORATIVO)
+# -----------------------------------------------------------------------------
+col_left, col_right = st.columns([2, 1])
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- SEÇÃO CENTRAL: GRÁFICO + VITRINE DE TOP PRODUTOS ---
-col_main, col_side = st.columns([2, 1])
-
-with col_main:
-    st.markdown("### 📈 Visão de Vendas")
-    st.markdown("<div style='color: #64748b; margin-bottom: 10px;'>Fluxo de caixa mensal</div>", unsafe_allow_html=True)
+with col_left:
+    st.markdown('<div class="crm-card">', unsafe_allow_html=True)
+    st.markdown("### 📈 Tendência de Receita Mensal")
     
-    # Gráfico elegante e limpo
-    fat_mensal = df_f.groupby(['Mes','MesNome'])['ValorTotal'].sum().reset_index().sort_values('Mes')
-    
+    # Dados combinados
+    fin_data = df_filtered.groupby(['Mes', 'MesNome']).agg({'ValorTotal': 'sum', 'VendaID': 'count'}).reset_index().sort_values('Mes')
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=fat_mensal['MesNome'], y=fat_mensal['ValorTotal'],
-        mode='lines',
-        fill='tozeroy', # Preenchimento embaixo da linha (estilo área)
-        line=dict(color='#3b82f6', width=3),
-        name='Receita'
+    
+    # Barras (Volume Financeiro)
+    fig.add_trace(go.Bar(
+        x=fin_data['MesNome'], 
+        y=fin_data['ValorTotal'],
+        name='Receita (R$)',
+        marker_color='#0070D2', # Salesforce Blue
+        opacity=0.8,
+        text=fin_data['ValorTotal'],
+        texttemplate='%{text:.2s}',
+        textposition='outside'
     ))
+    
+    # Linha (Tendência)
+    fig.add_trace(go.Scatter(
+        x=fin_data['MesNome'],
+        y=fin_data['ValorTotal'],
+        mode='lines+markers',
+        name='Tendência',
+        line=dict(color='#032D60', width=2), # Navy Blue
+        marker=dict(size=6, color='white', line=dict(color='#032D60', width=2))
+    ))
+
     fig.update_layout(
-        height=400,
-        margin=dict(l=0,r=0,t=10,b=0),
+        height=350,
         plot_bgcolor='white',
         paper_bgcolor='white',
-        yaxis=dict(showgrid=True, gridcolor='#f1f5f9', tickprefix="R$ "),
-        xaxis=dict(showgrid=False)
+        margin=dict(l=20, r=20, t=30, b=20),
+        xaxis=dict(showgrid=False, linecolor='#DDDBDA'),
+        yaxis=dict(showgrid=True, gridcolor='#F3F3F3', showline=False),
+        showlegend=False
     )
     st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with col_side:
-    st.markdown("### 🔥 Mais Vendidos")
-    st.markdown("<div style='color: #64748b; margin-bottom: 10px;'>Ranking de produtos</div>", unsafe_allow_html=True)
+with col_right:
+    st.markdown('<div class="crm-card">', unsafe_allow_html=True)
+    st.markdown("### 🏆 Top Oportunidades (Produtos)")
     
-    # Lógica para criar "Cards de Produto"
-    top_prods = df_f.groupby('NomeProduto').agg({'ValorTotal':'sum', 'Quantidade':'sum'}).reset_index()
-    top_prods = top_prods.sort_values('ValorTotal', ascending=False).head(4)
+    top_items = df_filtered.groupby('NomeProduto')['ValorTotal'].sum().reset_index().sort_values('ValorTotal', ascending=True).tail(8)
     
-    for index, row in top_prods.iterrows():
-        st.markdown(f"""
-        <div class="product-box">
-            <div class="product-icon">{row['NomeProduto'][0]}</div>
-            <div style="flex-grow: 1;">
-                <div style="font-weight: 600; color: #1e293b;">{row['NomeProduto']}</div>
-                <div style="font-size: 12px; color: #64748b;">{row['Quantidade']} unidades vendidas</div>
-            </div>
-            <div style="font-weight: 700; color: #059669;">R$ {row['ValorTotal']:,.0f}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    fig2 = px.bar(
+        top_items, 
+        x='ValorTotal', 
+        y='NomeProduto', 
+        orientation='h',
+        text='ValorTotal',
+        color_discrete_sequence=['#4BC076'] # Salesforce Green (Success)
+    )
+    
+    fig2.update_traces(texttemplate='R$ %{text:.2s}', textposition='outside')
+    fig2.update_layout(
+        height=350,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis=dict(showgrid=True, gridcolor='#F3F3F3'),
+        yaxis=dict(title=None),
+        showlegend=False
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PRATELEIRA DE PRODUTOS (GRID VIEW) ---
-st.markdown("---")
-st.markdown("### 🛍️ Detalhe do Inventário")
-st.markdown("<div style='color: #64748b; margin-bottom: 20px;'>Performance detalhada por item do catálogo</div>", unsafe_allow_html=True)
+# -----------------------------------------------------------------------------
+# 7. TABELA DE DETALHES (LIST VIEW CRM)
+# -----------------------------------------------------------------------------
+st.markdown('<div class="crm-card">', unsafe_allow_html=True)
+st.markdown("### 📋 Transações Recentes")
 
-# Agrupamento para a grade
-grid_data = df_f.groupby('NomeProduto').agg({
-    'ValorTotal': 'sum',
-    'Quantidade': 'sum',
-    'Categoria': 'first'
-}).reset_index().sort_values('ValorTotal', ascending=False).head(8) # Top 8 para não poluir
+# Preparar tabela estilo relatório
+df_table = df_filtered[['DataVenda', 'NomeCliente', 'Categoria', 'NomeProduto', 'ValorTotal', 'FormaPagamento']].sort_values('DataVenda', ascending=False).head(100)
+df_table.columns = ['Data', 'Conta (Cliente)', 'Linha de Negócio', 'Produto/Serviço', 'Valor (R$)', 'Status Pgto']
 
-# Criar grid de 4 colunas
-cols = st.columns(4)
-for i, (index, row) in enumerate(grid_data.iterrows()):
-    col = cols[i % 4]
-    with col:
-        # Card estilo "Produto de E-commerce"
-        st.markdown(f"""
-        <div class="ecommerce-card" style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 40px; margin-bottom: 10px;">🏷️</div>
-            <div style="font-weight: 600; height: 50px; display: flex; align-items: center; justify-content: center;">{row['NomeProduto']}</div>
-            <div style="color: #64748b; font-size: 12px; margin-bottom: 10px;">{row['Categoria']}</div>
-            <div style="font-size: 20px; font-weight: 800; color: #3b82f6;">R$ {row['ValorTotal']:,.0f}</div>
-            <div style="background: #f1f5f9; border-radius: 4px; padding: 4px; margin-top: 10px; font-size: 12px;">
-                ⭐ {row['Quantidade']} vendas
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+# Formatar
+df_table['Data'] = df_table['Data'].dt.strftime('%d/%m/%Y')
+df_table['Valor (R$)'] = df_table['Valor (R$)'].apply(lambda x: f"R$ {x:,.2f}")
 
-st.caption("Store Manager System • Desenvolvido com Streamlit")
+st.dataframe(
+    df_table, 
+    use_container_width=True, 
+    height=400,
+    hide_index=True
+)
+st.markdown('</div>', unsafe_allow_html=True)
